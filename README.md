@@ -69,6 +69,7 @@ Vous pouvez maintenant navigué sur le projet Django.
 ## Démo
 
 ![App Screenshot](https://image.noelshack.com/fichiers/2024/49/2/1733266123-screenshot-20241203-234423.png)
+![App Screenshot2](https://image.noelshack.com/fichiers/2024/49/2/1733266273-screenshot-20241203-235057.png)
 
 
 ## API Reference
