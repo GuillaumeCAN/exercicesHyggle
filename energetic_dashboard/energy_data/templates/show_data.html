@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="https://static.wixstatic.com/media/5836f9_c134a67169034076949e2c2f5f8c0e24%7Emv2.png/v1/fill/w_192%2Ch_192%2Clg_1%2Cusm_0.66_1.00_0.01/5836f9_c134a67169034076949e2c2f5f8c0e24%7Emv2.png" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Énergétique</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/flatly/bootstrap.min.css" integrity="sha384-qF/QmIAj5ZaYFAeQcrQ6bfVMAh4zZlrGwTPY7T/M+iTTLJqJBJjwwnsE5Y0mV7QK" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Wix+Madefor+Text:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<style>
+    body{
+        font-family: Poppins, sans-serif;
+    }
+</style>
+
+<div class="title" style="margin-top: 2rem; display: flex; align-content: center; flex-wrap: wrap;  justify-content: center; flex-direction: column; align-items: center">
+    <h3 style="text-transform: uppercase">Tableau de bord énergétique</h3>
+    <h5>Exercice Django - HYGGLE</h5>
+</div>
+
+
+<div style="display: flex; flex-direction: row; justify-content: center; align-items: baseline; width: max-content">
+<div class="right-side" style="display: flex; flex-direction: column;">
+
+    <!-- Importation CSV -->
+  <div class="card border-secondary mb-3" style="width: 40rem; margin-left: 2rem; display: flex; justify-content: center; align-content: center">
+    <div class="card-header">Importer votre fichier CSV</div>
+    <div class="card-body">
+
+      <!-- Affichage des messages -->
+        {% if messages %}
+        <div>
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div>
+                <input class="form-control" type="file" name="csv_file">
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Importer</button>
+        </form>
+    </div>
+  </div>
+
+  <!-- Tableau des données -->
+  <div class="card border-secondary mb-3" style="width: 40rem; height: 48rem; margin-left: 2rem; margin-right: 1rem">
+      <div class="card-header">Tableau des données</div>
+      <div class="card-body">
+        <h4 class="card-title">Données de consomations / Regions</h4>
+
+        <!-- Sélecteur de région -->
+        <label for="regionSelector">Sélectionner une région :</label>
+        <select id="regionSelector" class="form-select">
+            <option value="all">Toutes les régions</option>
+            {% for region in unique_regions %}
+            <option value="{{ region }}">{{ region }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- TABLEAU -->
+        <table border="1" class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="row">Région</th>
+                    <th scope="row">Consommation (TWh)</th>
+                    <th scope="row">Date</th>
+                </tr>
+            </thead>
+            <tbody id="dataTable">
+                {% for region, cons, date in data_list %}
+                <tr class="dataRow table-light" data-region="{{ region }}">
+                    <td>{{ region }}</td>
+                    <td>{{ cons }}</td>
+                    <td>{{ date }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2">Aucune donnée à afficher</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Liens de pagination -->
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; première </a>
+                    <a href="?page={{ page_obj.previous_page_number }}"> précédente </a>
+                {% endif %}
+
+                <span class="current">Page {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.</span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}"> suivante </a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}"> dernière &raquo; </a>
+                {% endif %}
+            </span>
+        </div>
+
+      </div>
+  </div>
+</div>
+
+<!--  GRAPHIQUE  -->
+<div class="graph" style="display: flex; flex-direction: column;">
+    <div class="card border-secondary mb-3" style="width: 74rem; margin-top: 2rem; margin-right: 2rem !important;">
+        <div class="card-header">Graphique par région</div>
+          <div class="card-body">
+            <h5>Graphique de consommation par région et par date</h5>
+            <canvas id="consumptionChart" width="800" height="250"></canvas>
+          </div>
+        </div>
+
+        <div class="card border-secondary mb-3" style="width: 74rem; margin-right: 2rem !important;">
+            <div class="card-header">Graphique annuel</div>
+            <div class="card-body">
+                <h5>Graphique de consommation annuelle (toutes régions confondues)</h5>
+                <canvas id="yearlyConsumptionChart" width="800" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+var dataList = JSON.parse('{{ data_list_json|escapejs }}');
+var itemsPerPage = 11;  // Nombre d'éléments par page
+var currentPage = 1;  // Page initiale
+
+// update le graph
+function updateChart(filteredData) {
+    var regions = filteredData.map(function(item) { return item[0]; });
+    var consumption = filteredData.map(function(item) { return item[1]; });
+
+    // update les données du graph
+    consumptionChart.data.labels = regions;
+    consumptionChart.data.datasets[0].data = consumption;
+    consumptionChart.update();
+}
+
+// update tableau
+function updateTable(filteredData, totalPages) {
+    var tableBody = document.getElementById('dataTable');
+    tableBody.innerHTML = '';  // Réinitialiser le tableau
+
+    // indices de début et de fin pour la page courante
+    var start = (currentPage - 1) * itemsPerPage;
+    var end = Math.min(start + itemsPerPage, filteredData.length);
+
+    // tableau avec les nouvelles données
+    for (var i = start; i < end; i++) {
+        var item = filteredData[i];
+        var row = document.createElement('tr');
+        row.classList.add('dataRow');
+        row.setAttribute('data-region', item[0]);
+
+        var regionCell = document.createElement('td');
+        regionCell.textContent = item[0];
+
+        var consumptionCell = document.createElement('td');
+        consumptionCell.textContent = item[1];
+
+        // date en objet
+        var dateCell = document.createElement('td');
+        var dateObj = new Date(item[2]);  // Convertir la date ISO en objet Date
+        dateCell.textContent = dateObj.toLocaleDateString();  // Formater la date en format local
+        row.appendChild(regionCell);
+        row.appendChild(consumptionCell);
+        row.appendChild(dateCell);
+        tableBody.appendChild(row);
+    }
+
+    // update pagination
+    updatePagination(filteredData, totalPages);
+}
+
+
+
+// filtrer par région
+function filterDataByRegion(selectedRegion) {
+    var filteredData = dataList.filter(function(item) {
+        return selectedRegion === 'all' || item[0] === selectedRegion;
+    });
+
+    // nombre total de pages pour les données filtrées
+    var totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    // Reset la page à 1 -> change de région
+    if (selectedRegion !== 'all') {
+        currentPage = 1;
+    }
+
+    // update tableau + graph
+    updateTable(filteredData, totalPages);
+    updateChart(filteredData);  // Mettre à jour le graphique après la mise à jour du tableau
+}
+
+// update liens de pagination
+function updatePagination(filteredData, totalPages) {
+    var paginationLinks = document.querySelector('.pagination');
+    paginationLinks.innerHTML = '';  // Reset
+
+    if (totalPages > 1) {
+        // Lien précédent
+        var prevLink = document.createElement('a');
+        prevLink.textContent = 'Précédente';
+        prevLink.href = "#";
+        prevLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                filterDataByRegion(document.getElementById('regionSelector').value);
+            }
+        });
+        paginationLinks.appendChild(prevLink);
+
+        // Affichage page courante
+        var pageInfo = document.createElement('span');
+        pageInfo.textContent = 'Page ' + currentPage + ' de ' + totalPages;
+        paginationLinks.appendChild(pageInfo);
+
+        // Lien suivant
+        var nextLink = document.createElement('a');
+        nextLink.textContent = 'Suivante';
+        nextLink.href = "#";
+        nextLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                filterDataByRegion(document.getElementById('regionSelector').value);
+            }
+        });
+        paginationLinks.appendChild(nextLink);
+    }
+}
+
+
+// changement de sélection de région
+document.getElementById('regionSelector').addEventListener('change', function() {
+    var selectedRegion = this.value;
+    currentPage = 1;  // Reset page à 1
+    filterDataByRegion(selectedRegion);
+});
+
+// Initialise graph
+var ctx = document.getElementById('consumptionChart').getContext('2d');
+var consumptionChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Consommation (TWh)',
+            data: [],  // Conso régions
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1,
+            fill: false
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// toutes les régions par défaut
+filterDataByRegion('all');
+</script>
+
+<script>
+// regrouper les data par année
+function groupDataByYear(data) {
+    const yearlyData = {};
+
+    data.forEach(function (item) {
+        const date = new Date(item[2]);  // Convertir la date en objet Date
+        const year = date.getFullYear();  // Extraire l'année
+
+        // Si existe pas encore dans yearlyData -> 0
+        if (!yearlyData[year]) {
+            yearlyData[year] = 0;
+        }
+
+        // conso à l'année
+        yearlyData[year] += parseFloat(item[1]);
+    });
+
+    return yearlyData;
+}
+
+// graph annuel
+var ctxYearly = document.getElementById('yearlyConsumptionChart').getContext('2d');
+var yearlyConsumptionChart = new Chart(ctxYearly, {
+    type: 'bar',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Consommation annuelle (TWh)',
+            data: [],  // Conso totale/année
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            borderColor: 'rgba(153, 102, 255, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// update graph annuel
+function updateYearlyChart(data) {
+    const groupedData = groupDataByYear(data);
+    const years = Object.keys(groupedData);
+    const consumption = Object.values(groupedData);
+
+    // update données du graph
+    yearlyConsumptionChart.data.labels = years;
+    yearlyConsumptionChart.data.datasets[0].data = consumption;
+    yearlyConsumptionChart.update();
+}
+
+// graph annuel avec toutes les données par defaut
+updateYearlyChart(dataList);
+</script>
+
+</body>
+</html>
