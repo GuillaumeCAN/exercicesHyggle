@@ -66,6 +66,11 @@ Lancer le serveur de développement :
 Rendez-vous sur http://127.0.0.1:8000/ une fois le serveur de développement lancé.
 Vous pouvez maintenant navigué sur le projet Django.
     
+## Démo
+
+![App Screenshot](https://ibb.co/jvPgdxF)
+
+
 ## API Reference
 
 #### Récupérer toute la collection :
@@ -120,3 +125,8 @@ Vous pouvez maintenant navigué sur le projet Django.
 | Parameter | Type     | Description                            |
 | :-------- | :------- | :--------------------------------      |
 | `id`      | `int`    | **Requis**. ID de l'item à supprimer                |
+
+
+
+
+
