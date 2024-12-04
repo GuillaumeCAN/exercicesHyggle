@@ -93,7 +93,7 @@ Vous pouvez maintenant navigué sur le projet Django.
 #### Ajouter un item dans la collection :
 
 ```http
-  POST /api/energy-data/
+  POST /api/energy-data/add/
 ```
 
 | Parameter | Type     | Description                            |
@@ -107,7 +107,7 @@ Vous pouvez maintenant navigué sur le projet Django.
 #### Modifier un item dans la collection :
 
 ```http
-  PUT /api/energy-data/${id}
+  PUT /api/energy-data/update/${id}
 ```
 
 | Parameter | Type     | Description                            |
@@ -120,7 +120,7 @@ Vous pouvez maintenant navigué sur le projet Django.
 
 #### Supprimer un item dans la collection :
 ```http
-  DELETE /api/energy-data/${id}
+  DELETE /api/energy-data/delete/${id}
 ```
 
 | Parameter | Type     | Description                            |
