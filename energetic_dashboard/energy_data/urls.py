@@ -25,7 +25,7 @@ urlpatterns = [
     # API
     path('api/energy-data/', energy_data_list, name='energy_data_list'),  # GET
     path('api/energy-data/<int:id>/', views.get_energy_data, name='get_energy_data'), # GET BY ID
-    path('api/energy-data/', add_energy_data, name='add_energy_data'),  # POST
-    path('api/energy-data/<int:id>/', views.update_energy_data, name='update_energy_data'), # PUT
-    path('api/energy-data/<int:id>/', views.delete_energy_data, name='delete_energy_data'), # DELETE
+    path('api/energy-data/add/', add_energy_data, name='add_energy_data'),  # POST
+    path('api/energy-data/update/<int:id>/', views.update_energy_data, name='update_energy_data'), # PUT
+    path('api/energy-data/delete/<int:id>/', views.delete_energy_data, name='delete_energy_data'), # DELETE
 ]
