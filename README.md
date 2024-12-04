@@ -1,7 +1,7 @@
 
 # Exercices Hyggle
 
-Voici mes réponse au test technique pour la candidature d'alternance au poste de Développeur FullStack.
+Voici mes réponses au test technique pour la candidature d'alternance au poste de Développeur FullStack.
 
 
 
